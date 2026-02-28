@@ -1003,7 +1003,7 @@
 // ============================================================
 // CONFIG
 // ============================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzGWhVsaHbhxikHbZw-WQ6o8vTBlwRkBPXzKz4f8kK-siJmh3IKcEvZouKIslVC9OuR/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynOksuSuPa-w05eHy2hQUpEvNzj9E7GJYoIyZUyWIZlfCrbhvMfvXISCu5iNBFZHq4kg/exec';
 
 // ============================================================
 // DATA
@@ -1031,9 +1031,9 @@ let selectedMoods = [];
 // GOOGLE SHEETS API
 // ============================================================
 async function apiCall(params) {
-  const url = new URL(SCRIPT_URL);
-  Object.entries(params).forEach(([k,v]) => url.searchParams.append(k, v));
-  const resp = await fetch(url.toString());
+  const form = new FormData();
+  Object.entries(params).forEach(([k,v]) => form.append(k, v));
+  const resp = await fetch(SCRIPT_URL, {method:'POST', body: form});
   return resp.json();
 }
 
