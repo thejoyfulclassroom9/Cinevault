@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineVault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --bg4: #22222e;
+    --gold: #c9a84c;
+    --gold2: #e8c97a;
+    --red: #c0392b;
+    --red2: #e74c3c;
+    --text: #f0ede8;
+    --text2: #a09890;
+    --text3: #6a6460;
+    --border: rgba(201,168,76,0.15);
+    --border2: rgba(255,255,255,0.06);
+    --radius: 6px;
+    --shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRAIN OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.35;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(180deg, rgba(10,10,15,0.98) 0%, rgba(10,10,15,0.85) 100%);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(201,168,76,0.4);
+  }
+  .logo span { color: var(--text); }
+  .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    letter-spacing: 0.03em;
+  }
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #0a0a0f;
+  }
+  .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(201,168,76,0.35); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-red {
+    background: linear-gradient(135deg, var(--red), var(--red2));
+    color: white;
+  }
+  .btn-red:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(192,57,43,0.4); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-size: 0.78rem;
+  }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  /* MAIN LAYOUT */
+  .main-layout {
+    display: flex;
+    min-height: calc(100vh - 64px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border2);
+    padding: 1.5rem 1rem;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  .filter-section h4 {
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.8rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--gold); }
+  .search-input::placeholder { color: var(--text3); }
+
+  .filter-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .filter-pill {
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .filter-pill:hover { border-color: var(--gold); color: var(--gold); }
+  .filter-pill.active { background: var(--gold); border-color: var(--gold); color: #0a0a0f; font-weight: 500; }
+
+  .range-filter { display: flex; flex-direction: column; gap: 0.4rem; }
+  .range-filter label { font-size: 0.78rem; color: var(--text2); display: flex; justify-content: space-between; }
+  .range-filter input[type=range] {
+    width: 100%;
+    accent-color: var(--gold);
+    cursor: pointer;
+  }
+
+  /* CONTENT */
+  .content {
+    flex: 1;
+    padding: 2rem;
+    min-width: 0;
+  }
+
+  .content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .content-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+  }
+  .count-badge {
+    font-size: 0.78rem;
+    color: var(--text3);
+    background: var(--bg3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    margin-left: 0.75rem;
+  }
+
+  /* MOOD SUGGEST BANNER */
+  .mood-banner {
+    background: linear-gradient(135deg, var(--bg3) 0%, rgba(201,168,76,0.08) 100%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .mood-banner:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-1px); }
+  .mood-banner .mood-icon { font-size: 1.8rem; }
+  .mood-banner h3 { font-family: 'Playfair Display', serif; font-size: 1rem; font-style: italic; color: var(--gold); }
+  .mood-banner p { font-size: 0.78rem; color: var(--text3); margin-top: 0.1rem; }
+
+  /* MOVIE GRID */
+  .movie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .movie-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg3);
+    cursor: pointer;
+    transition: transform 0.25s, box-shadow 0.25s;
+    border: 1px solid var(--border2);
+    aspect-ratio: 2/3;
+  }
+  .movie-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 16px 50px rgba(0,0,0,0.7); border-color: rgba(201,168,76,0.3); }
+  .movie-card img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.2s;
+  }
+  .movie-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.25s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.75rem;
+  }
+  .movie-card:hover .movie-card-overlay { opacity: 1; }
+  .movie-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.3rem;
+  }
+  .movie-card-meta { font-size: 0.7rem; color: var(--text2); }
+  .movie-card-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+    padding: 1.5rem 0.6rem 0.6rem;
+  }
+  .movie-card-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .movie-card-year { font-size: 0.65rem; color: var(--text3); margin-top: 0.2rem; }
+  .movie-card-rating {
+    position: absolute;
+    top: 0.5rem; right: 0.5rem;
+    background: rgba(0,0,0,0.75);
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.65rem;
+    color: var(--gold);
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+  }
+  .movie-card-views {
+    position: absolute;
+    top: 0.5rem; left: 0.5rem;
+    background: rgba(0,0,0,0.75);
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.62rem;
+    color: var(--text2);
+    backdrop-filter: blur(4px);
+  }
+  .no-poster {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--bg3) 0%, var(--bg4) 100%);
+    color: var(--text3);
+    gap: 0.5rem;
+    font-size: 2rem;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    color: var(--text3);
+  }
+  .empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.4; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--text2); margin-bottom: 0.5rem; }
+  .empty-state p { font-size: 0.85rem; max-width: 300px; margin: 0 auto 1.5rem; }
+
+  /* MODAL OVERLAY */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.25s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal::-webkit-scrollbar { width: 4px; }
+  .modal::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  .modal-header {
+    padding: 1.5rem 1.75rem 1rem;
+    border-bottom: 1px solid var(--border2);
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; background: var(--bg2); z-index: 1;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; font-weight: 400;
+  }
+  .modal-close {
+    background: transparent; border: none; color: var(--text3);
+    font-size: 1.4rem; cursor: pointer; line-height: 1;
+    transition: color 0.15s;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 1.5rem 1.75rem; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .form-input, .form-textarea, .form-select {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 0.65rem 0.9rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.87rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--gold); }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--text3); }
+  .form-textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+  .form-select { appearance: none; cursor: pointer; }
+  .form-select option { background: var(--bg3); }
+
+  /* CATEGORY CHECKBOXES */
+  .category-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .cat-check { display: none; }
+  .cat-label {
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .cat-check:checked + .cat-label {
+    background: var(--gold); border-color: var(--gold); color: #0a0a0f; font-weight: 500;
+  }
+
+  /* POSTER UPLOAD */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .upload-zone:hover { border-color: var(--gold); }
+  .upload-zone p { font-size: 0.8rem; color: var(--text3); margin-top: 0.4rem; }
+  .upload-zone .upload-icon { font-size: 1.8rem; }
+  .upload-preview {
+    width: 100%; max-width: 160px; margin: 0 auto;
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 2/3;
+  }
+  .upload-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ACTORS SECTION */
+  .actors-row { display: flex; gap: 0.75rem; }
+  .actor-slot {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  }
+  .actor-photo-upload {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 2px dashed var(--border2);
+    overflow: hidden;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    transition: border-color 0.2s;
+    background: var(--bg4);
+    flex-shrink: 0;
+  }
+  .actor-photo-upload:hover { border-color: var(--gold); }
+  .actor-photo-upload img { width: 100%; height: 100%; object-fit: cover; }
+  .actor-name-input {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 0.35rem 0.5rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    outline: none;
+    width: 100%;
+    text-align: center;
+    transition: border-color 0.2s;
+    list-style: none;
+  }
+  .actor-name-input:focus { border-color: var(--gold); }
+  .actor-suggestions {
+    position: absolute;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    z-index: 200;
+    min-width: 180px;
+    box-shadow: var(--shadow);
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .actor-suggestion-item {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: background 0.1s;
+  }
+  .actor-suggestion-item:hover { background: var(--bg4); }
+  .actor-suggestion-thumb {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--bg4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .actor-wrapper { position: relative; width: 100%; }
+
+  /* FORM FOOTER */
+  .modal-footer {
+    padding: 1rem 1.75rem 1.5rem;
+    display: flex; justify-content: flex-end; gap: 0.75rem;
+    border-top: 1px solid var(--border2);
+    margin-top: 1rem;
+  }
+
+  /* FILM DETAIL MODAL */
+  .film-detail { max-width: 820px; }
+  .film-detail-layout { display: flex; gap: 1.75rem; }
+  .film-detail-poster {
+    width: 200px; flex-shrink: 0;
+    border-radius: 8px; overflow: hidden;
+    aspect-ratio: 2/3;
+    background: var(--bg3);
+  }
+  .film-detail-poster img { width: 100%; height: 100%; object-fit: cover; }
+  .film-detail-info { flex: 1; min-width: 0; }
+  .film-detail-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem; font-weight: 700; line-height: 1.2;
+    margin-bottom: 0.4rem;
+  }
+  .film-detail-meta { font-size: 0.8rem; color: var(--text3); margin-bottom: 1rem; }
+  .film-detail-meta span { color: var(--text2); }
+  .film-cats { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+  .film-cat-tag {
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.25);
+    font-size: 0.72rem;
+    color: var(--gold);
+  }
+  .film-synopsis {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--text2);
+    margin-bottom: 1.25rem;
+  }
+  .film-actors { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .film-actor {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+  }
+  .film-actor-photo {
+    width: 28px; height: 28px;
+    border-radius: 50%; object-fit: cover;
+    background: var(--bg4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .film-actor-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .film-actor-name { font-size: 0.78rem; color: var(--text); }
+
+  /* STATS BAR */
+  .film-stats-bar {
+    display: flex; gap: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    margin-bottom: 1.25rem;
+  }
+  .film-stat { text-align: center; }
+  .film-stat .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .film-stat .stat-label { font-size: 0.65rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.1rem; }
+  .stat-divider { width: 1px; background: var(--border2); }
+
+  /* VIEWING HISTORY */
+  .viewing-history { margin-top: 0.5rem; }
+  .viewing-history h4 {
+    font-size: 0.68rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text3);
+    margin-bottom: 0.6rem;
+  }
+  .viewing-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .viewing-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+  }
+  .viewing-item .view-date { color: var(--text3); font-size: 0.75rem; }
+  .viewing-item .view-score {
+    color: var(--gold); font-weight: 600;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+  }
+  .view-score-num { font-size: 0.65rem; color: var(--text3); }
+
+  /* WATCH MODAL */
+  .watch-note-modal { max-width: 420px; }
+  .rating-input-wrap {
+    display: flex; align-items: center; gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .score-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    color: var(--gold);
+    line-height: 1;
+    min-width: 80px;
+    text-align: center;
+  }
+  .score-display span { font-size: 1.2rem; color: var(--text3); }
+  input[type=range].score-range {
+    flex: 1;
+    accent-color: var(--gold);
+    cursor: pointer;
+    height: 6px;
+  }
+
+  /* MOOD MODAL */
+  .mood-modal { max-width: 500px; }
+  .mood-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0; }
+  .mood-option {
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    user-select: none;
+  }
+  .mood-option:hover { border-color: var(--gold); }
+  .mood-option.selected { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+  .mood-option .mood-emoji { font-size: 1.8rem; margin-bottom: 0.4rem; }
+  .mood-option .mood-name { font-size: 0.82rem; font-weight: 500; }
+  .mood-option .mood-desc { font-size: 0.7rem; color: var(--text3); margin-top: 0.15rem; }
+  .mood-duration { margin: 0.75rem 0; }
+  .mood-results { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+  .mood-result-card {
+    display: flex; gap: 1rem;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 0.75rem;
+    cursor: pointer; transition: all 0.2s;
+    align-items: center;
+  }
+  .mood-result-card:hover { border-color: var(--gold); transform: translateX(4px); }
+  .mood-result-poster {
+    width: 50px; height: 75px;
+    border-radius: 4px; overflow: hidden;
+    background: var(--bg4); flex-shrink: 0;
+  }
+  .mood-result-poster img { width: 100%; height: 100%; object-fit: cover; }
+  .mood-result-info { flex: 1; }
+  .mood-result-title { font-family: 'Playfair Display', serif; font-size: 0.95rem; margin-bottom: 0.2rem; }
+  .mood-result-meta { font-size: 0.72rem; color: var(--text3); }
+
+  /* SECTION DIVIDER */
+  .section-divider {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin: 1.25rem 0 1rem;
+    color: var(--text3); font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .section-divider::before, .section-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border2);
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 9000;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.75rem 1.25rem;
+    font-size: 0.85rem; color: var(--text);
+    box-shadow: var(--shadow);
+    transform: translateY(100px); opacity: 0;
+    transition: all 0.3s;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(201,168,76,0.4); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .content { padding: 1rem; }
+    .movie-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.75rem; }
+    .film-detail-layout { flex-direction: column; }
+    .film-detail-poster { width: 140px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .actors-row { flex-direction: column; }
+    .header-actions .btn span { display: none; }
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .movie-card { animation: fadeIn 0.35s ease both; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+  /* FILM CARD NO POSTER */
+  .no-poster-card {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--bg3), var(--bg4));
+    color: var(--text3);
+  }
+  .no-poster-card .icon { font-size: 2.5rem; opacity: 0.4; }
+  .no-poster-card .title-placeholder {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 0 0.5rem;
+    color: var(--text2);
+    opacity: 0.7;
+  }
+
+  .action-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .rating-stars { color: var(--gold); font-size: 0.9rem; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Cine<span>Vault</span></div>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="openMoodModal()">
+      🎲 <span>What should we watch?</span>
+    </button>
+    <button class="btn btn-gold" onclick="openAddModal()">
+      + <span>Add Film</span>
+    </button>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="filter-section">
+      <h4>🔍 Search</h4>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search by title..." oninput="applyFilters()">
+    </div>
+
+    <div class="filter-section">
+      <h4>🎬 Genre</h4>
+      <div class="filter-pills" id="genreFilters">
+        <button class="filter-pill active" data-genre="all" onclick="toggleGenre(this)">All</button>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <h4>🎭 Actor</h4>
+      <input type="text" class="search-input" id="actorFilterInput" placeholder="Search actor..." oninput="applyFilters()">
+    </div>
+
+    <div class="filter-section">
+      <h4>⏱ Duration</h4>
+      <div class="range-filter">
+        <label>Max: <span id="durationVal">240</span> min</label>
+        <input type="range" id="durationFilter" min="30" max="240" value="240" oninput="document.getElementById('durationVal').textContent=this.value; applyFilters()">
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <h4>📅 Year</h4>
+      <div class="range-filter">
+        <label>From: <span id="yearVal">1970</span></label>
+        <input type="range" id="yearFilter" min="1970" max="2025" value="1970" oninput="document.getElementById('yearVal').textContent=this.value; applyFilters()">
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <h4>⭐ Min Rating</h4>
+      <div class="range-filter">
+        <label>At least: <span id="ratingVal">0</span>/10</label>
+        <input type="range" id="ratingFilter" min="0" max="10" step="0.5" value="0" oninput="document.getElementById('ratingVal').textContent=this.value; applyFilters()">
+      </div>
+    </div>
+
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:auto;" onclick="resetFilters()">↺ Reset filters</button>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div class="mood-banner" onclick="openMoodModal()">
+      <div class="mood-icon">🎭</div>
+      <div>
+        <h3>What should we watch tonight?</h3>
+        <p>Tell us your mood — we'll find the perfect film for you</p>
+      </div>
+      <div style="margin-left:auto;color:var(--text3);font-size:1.2rem;">›</div>
+    </div>
+
+    <div class="content-header">
+      <div style="display:flex;align-items:center;">
+        <h2>Your Collection</h2>
+        <span class="count-badge" id="countBadge">0 films</span>
+      </div>
+    </div>
+
+    <div id="movieGrid" class="movie-grid"></div>
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <div class="empty-icon">🎞️</div>
+      <h3>Your vault is empty</h3>
+      <p>Start building your collection — add your first film to get started.</p>
+      <button class="btn btn-gold" onclick="openAddModal()">+ Add your first film</button>
+    </div>
+  </main>
+</div>
+
+<!-- ===== ADD/EDIT FILM MODAL ===== -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="addModalTitle">Add a Film</h2>
+      <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+
+        <!-- POSTER -->
+        <div class="form-group form-full">
+          <label>Movie Poster</label>
+          <div id="posterZone" class="upload-zone" onclick="document.getElementById('posterFile').click()">
+            <div class="upload-icon">🎬</div>
+            <p>Click to upload a poster image</p>
+            <input type="file" id="posterFile" accept="image/*" style="display:none" onchange="handlePosterUpload(event)">
+          </div>
+        </div>
+
+        <!-- TITLE -->
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" class="form-input" id="filmTitle" placeholder="Film title">
+        </div>
+
+        <!-- YEAR -->
+        <div class="form-group">
+          <label>Year</label>
+          <input type="number" class="form-input" id="filmYear" placeholder="2024" min="1900" max="2030">
+        </div>
+
+        <!-- DURATION -->
+        <div class="form-group">
+          <label>Duration (min)</label>
+          <input type="number" class="form-input" id="filmDuration" placeholder="120">
+        </div>
+
+        <!-- SYNOPSIS -->
+        <div class="form-group form-full">
+          <label>Synopsis</label>
+          <textarea class="form-textarea" id="filmSynopsis" placeholder="Brief description of the film..."></textarea>
+        </div>
+
+        <!-- CATEGORIES -->
+        <div class="form-group form-full">
+          <label>Categories</label>
+          <div class="category-grid" id="categoryGrid"></div>
+        </div>
+
+      </div>
+
+      <!-- ACTORS -->
+      <div class="section-divider">Cast</div>
+      <div class="actors-row" id="actorsRow">
+        <!-- Generated by JS -->
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveFilm()">Save Film</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FILM DETAIL MODAL ===== -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal film-detail">
+    <div class="modal-header">
+      <h2 id="detailModalTitle">Film Details</h2>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body" id="detailModalBody"></div>
+  </div>
+</div>
+
+<!-- ===== WATCH MODAL ===== -->
+<div class="modal-overlay" id="watchModal">
+  <div class="modal watch-note-modal">
+    <div class="modal-header">
+      <h2>🍿 We're watching this!</h2>
+      <button class="modal-close" onclick="closeModal('watchModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text2);font-size:0.85rem;" id="watchFilmName"></p>
+      <div style="margin-top:0.5rem;font-size:0.78rem;color:var(--text3);">
+        📅 <span id="watchDate"></span>
+      </div>
+      <div class="rating-input-wrap">
+        <div>
+          <div class="score-display" id="scoreDisplay">7<span>/10</span></div>
+          <div style="font-size:0.65rem;color:var(--text3);text-align:center;">Your rating</div>
+        </div>
+        <input type="range" class="score-range" id="scoreRange" min="0" max="10" step="0.5" value="7"
+          oninput="document.getElementById('scoreDisplay').innerHTML=this.value+'<span>/10</span>'">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('watchModal')">Cancel</button>
+      <button class="btn btn-red" onclick="saveWatching()">💾 Save viewing</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MOOD MODAL ===== -->
+<div class="modal-overlay" id="moodModal">
+  <div class="modal mood-modal">
+    <div class="modal-header">
+      <h2>🎭 What's the vibe tonight?</h2>
+      <button class="modal-close" onclick="closeModal('moodModal')">✕</button>
+    </div>
+    <div class="modal-body" id="moodModalBody">
+      <p style="color:var(--text2);font-size:0.85rem;margin-bottom:0.5rem;">Select your mood and preferences:</p>
+      <div class="mood-grid">
+        <div class="mood-option" data-mood="comedy" onclick="toggleMood(this)">
+          <div class="mood-emoji">😄</div>
+          <div class="mood-name">Feel Good</div>
+          <div class="mood-desc">Comedy, light-hearted</div>
+        </div>
+        <div class="mood-option" data-mood="thriller" onclick="toggleMood(this)">
+          <div class="mood-emoji">😰</div>
+          <div class="mood-name">On the Edge</div>
+          <div class="mood-desc">Thriller, suspense, horror</div>
+        </div>
+        <div class="mood-option" data-mood="action" onclick="toggleMood(this)">
+          <div class="mood-emoji">🔥</div>
+          <div class="mood-name">Action!</div>
+          <div class="mood-desc">Action, adventure, sci-fi</div>
+        </div>
+        <div class="mood-option" data-mood="drama" onclick="toggleMood(this)">
+          <div class="mood-emoji">🎭</div>
+          <div class="mood-name">Deep & Emotional</div>
+          <div class="mood-desc">Drama, fantasy</div>
+        </div>
+        <div class="mood-option" data-mood="animation" onclick="toggleMood(this)">
+          <div class="mood-emoji">✨</div>
+          <div class="mood-name">Magical</div>
+          <div class="mood-desc">Animation, fantasy</div>
+        </div>
+        <div class="mood-option" data-mood="documentary" onclick="toggleMood(this)">
+          <div class="mood-emoji">🌍</div>
+          <div class="mood-name">Learn Something</div>
+          <div class="mood-desc">Documentary</div>
+        </div>
+      </div>
+      <div class="mood-duration filter-section" style="margin-top:0.75rem;">
+        <h4>⏱ Max duration</h4>
+        <div class="range-filter">
+          <label>Up to <span id="moodDurVal">210</span> min</label>
+          <input type="range" id="moodDurRange" min="60" max="240" value="210" oninput="document.getElementById('moodDurVal').textContent=this.value">
+        </div>
+      </div>
+      <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:1rem;" onclick="getSuggestions()">✨ Suggest 3 films</button>
+      <div id="moodResults"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const CATEGORIES = ['Comedy','Romance','Action / Adventure','Thriller / Suspense','Horror','Sci-Fi','Drama','Animation','Documentary','Fantasy'];
+const MOOD_MAP = {
+  comedy: ['Comedy','Romance'],
+  thriller: ['Thriller / Suspense','Horror'],
+  action: ['Action / Adventure','Sci-Fi'],
+  drama: ['Drama','Fantasy'],
+  animation: ['Animation','Fantasy'],
+  documentary: ['Documentary']
+};
+
+let films = JSON.parse(localStorage.getItem('cinevault_films') || '[]');
+let actors = JSON.parse(localStorage.getItem('cinevault_actors') || '[]'); // [{name, photo}]
+let editingId = null;
+let posterBase64 = null;
+let actorData = [{name:'',photo:null},{name:'',photo:null},{name:'',photo:null}];
+let watchingFilmId = null;
+let selectedMoods = [];
+
+// ============================================================
+// INIT
+// ============================================================
+window.onload = () => {
+  buildCategoryGrid();
+  buildActorSlots();
+  renderGenreFilters();
+  renderMovieGrid(films);
+};
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderMovieGrid(list) {
+  const grid = document.getElementById('movieGrid');
+  const empty = document.getElementById('emptyState');
+  const badge = document.getElementById('countBadge');
+  badge.textContent = list.length + ' film' + (list.length !== 1 ? 's' : '');
+
+  if (list.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = list.map((f, idx) => {
+    const views = f.viewings ? f.viewings.length : 0;
+    const avg = getAvgRating(f);
+    const delay = (idx % 20) * 0.03;
+    return `
+    <div class="movie-card" style="animation-delay:${delay}s" onclick="openDetailModal('${f.id}')">
+      ${f.poster
+        ? `<img src="${f.poster}" alt="${escHtml(f.title)}" loading="lazy">`
+        : `<div class="no-poster-card"><div class="icon">🎬</div><div class="title-placeholder">${escHtml(f.title)}</div></div>`
+      }
+      <div class="movie-card-bottom">
+        <div class="movie-card-name">${escHtml(f.title)}</div>
+        ${f.year ? `<div class="movie-card-year">${f.year}</div>` : ''}
+      </div>
+      ${avg ? `<div class="movie-card-rating">★ ${avg}</div>` : ''}
+      ${views > 0 ? `<div class="movie-card-views">👁 ${views}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function getAvgRating(f) {
+  if (!f.viewings || f.viewings.length === 0) return null;
+  const sum = f.viewings.reduce((a,v) => a + v.score, 0);
+  return (sum / f.viewings.length).toFixed(1);
+}
+
+// ============================================================
+// GENRE FILTERS
+// ============================================================
+function renderGenreFilters() {
+  const container = document.getElementById('genreFilters');
+  const usedGenres = new Set();
+  films.forEach(f => (f.categories || []).forEach(c => usedGenres.add(c)));
+  container.innerHTML = `<button class="filter-pill active" data-genre="all" onclick="toggleGenre(this)">All</button>`;
+  usedGenres.forEach(g => {
+    container.innerHTML += `<button class="filter-pill" data-genre="${escHtml(g)}" onclick="toggleGenre(this)">${escHtml(g)}</button>`;
+  });
+}
+
+function toggleGenre(el) {
+  document.querySelectorAll('#genreFilters .filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const genreEl = document.querySelector('#genreFilters .filter-pill.active');
+  const genre = genreEl ? genreEl.dataset.genre : 'all';
+  const actor = document.getElementById('actorFilterInput').value.toLowerCase();
+  const maxDur = parseInt(document.getElementById('durationFilter').value);
+  const minYear = parseInt(document.getElementById('yearFilter').value);
+  const minRating = parseFloat(document.getElementById('ratingFilter').value);
+
+  let filtered = films.filter(f => {
+    if (search && !f.title.toLowerCase().includes(search)) return false;
+    if (genre !== 'all' && !(f.categories || []).includes(genre)) return false;
+    if (actor) {
+      const hasActor = (f.actors || []).some(a => a.name.toLowerCase().includes(actor));
+      if (!hasActor) return false;
+    }
+    if (f.duration && f.duration > maxDur) return false;
+    if (f.year && f.year < minYear) return false;
+    if (minRating > 0) {
+      const avg = getAvgRating(f);
+      if (!avg || parseFloat(avg) < minRating) return false;
+    }
+    return true;
+  });
+  renderMovieGrid(filtered);
+}
+
+function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('actorFilterInput').value = '';
+  document.getElementById('durationFilter').value = 240;
+  document.getElementById('durationVal').textContent = 240;
+  document.getElementById('yearFilter').value = 1970;
+  document.getElementById('yearVal').textContent = 1970;
+  document.getElementById('ratingFilter').value = 0;
+  document.getElementById('ratingVal').textContent = 0;
+  document.querySelectorAll('#genreFilters .filter-pill').forEach((p,i) => p.classList.toggle('active', i===0));
+  applyFilters();
+}
+
+// ============================================================
+// ADD / EDIT MODAL
+// ============================================================
+function openAddModal(id = null) {
+  editingId = id;
+  posterBase64 = null;
+  actorData = [{name:'',photo:null},{name:'',photo:null},{name:'',photo:null}];
+
+  document.getElementById('addModalTitle').textContent = id ? 'Edit Film' : 'Add a Film';
+
+  // reset form
+  ['filmTitle','filmYear','filmDuration','filmSynopsis'].forEach(k => document.getElementById(k).value = '');
+  document.querySelectorAll('.cat-check').forEach(c => c.checked = false);
+  resetPosterZone();
+
+  if (id) {
+    const f = films.find(x => x.id === id);
+    if (f) {
+      document.getElementById('filmTitle').value = f.title || '';
+      document.getElementById('filmYear').value = f.year || '';
+      document.getElementById('filmDuration').value = f.duration || '';
+      document.getElementById('filmSynopsis').value = f.synopsis || '';
+      (f.categories || []).forEach(c => {
+        const el = document.getElementById('cat_' + c.replace(/[\s\/]/g,'_'));
+        if (el) el.checked = true;
+      });
+      if (f.poster) {
+        posterBase64 = f.poster;
+        showPosterPreview(f.poster);
+      }
+      if (f.actors) {
+        f.actors.forEach((a, i) => {
+          if (i < 3) actorData[i] = {name: a.name, photo: a.photo};
+        });
+      }
+    }
+  }
+
+  buildActorSlots();
+  openModal('addModal');
+}
+
+function buildCategoryGrid() {
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = CATEGORIES.map(c => {
+    const id = 'cat_' + c.replace(/[\s\/]/g,'_');
+    return `<input type="checkbox" class="cat-check" id="${id}" value="${c}">
+            <label class="cat-label" for="${id}">${c}</label>`;
+  }).join('');
+}
+
+function buildActorSlots() {
+  const row = document.getElementById('actorsRow');
+  row.innerHTML = actorData.map((a, i) => `
+    <div class="actor-slot">
+      <div class="actor-photo-upload" onclick="document.getElementById('actorFile${i}').click()" title="Upload photo">
+        ${a.photo ? `<img src="${a.photo}" alt="">` : '👤'}
+      </div>
+      <input type="file" id="actorFile${i}" accept="image/*" style="display:none" onchange="handleActorPhoto(event,${i})">
+      <div class="actor-wrapper">
+        <input type="text" class="actor-name-input" id="actorName${i}" placeholder="Actor name" value="${escHtml(a.name)}"
+          oninput="actorNameInput(this,${i})" autocomplete="off">
+        <div class="actor-suggestions" id="actorSug${i}" style="display:none;"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function actorNameInput(el, idx) {
+  actorData[idx].name = el.value;
+  const q = el.value.toLowerCase().trim();
+  const sug = document.getElementById('actorSug'+idx);
+  if (q.length < 1) { sug.style.display='none'; return; }
+  const matches = actors.filter(a => a.name.toLowerCase().includes(q) && a.name !== actorData[idx].name);
+  if (matches.length === 0) { sug.style.display='none'; return; }
+  sug.innerHTML = matches.slice(0,6).map(a => `
+    <div class="actor-suggestion-item" onclick="selectActorSug('${escHtml(a.name)}',${idx})">
+      <div class="actor-suggestion-thumb">
+        ${a.photo ? `<img src="${a.photo}" alt="">` : '👤'}
+      </div>
+      ${escHtml(a.name)}
+    </div>`).join('');
+  sug.style.display = 'block';
+}
+
+function selectActorSug(name, idx) {
+  const actor = actors.find(a => a.name === name);
+  if (actor) {
+    actorData[idx] = {name: actor.name, photo: actor.photo};
+    buildActorSlots();
+    setTimeout(() => document.getElementById('actorName'+idx).focus(), 50);
+  }
+}
+
+function handleActorPhoto(event, idx) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    actorData[idx].photo = e.target.result;
+    buildActorSlots();
+  };
+  reader.readAsDataURL(file);
+}
+
+function handlePosterUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    posterBase64 = e.target.result;
+    showPosterPreview(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function showPosterPreview(src) {
+  const zone = document.getElementById('posterZone');
+  zone.innerHTML = `
+    <div class="upload-preview"><img src="${src}" alt="Poster"></div>
+    <p style="margin-top:0.5rem;font-size:0.72rem;">Click to change</p>
+    <input type="file" id="posterFile" accept="image/*" style="display:none" onchange="handlePosterUpload(event)">`;
+  zone.onclick = () => document.getElementById('posterFile').click();
+}
+
+function resetPosterZone() {
+  const zone = document.getElementById('posterZone');
+  zone.innerHTML = `<div class="upload-icon">🎬</div><p>Click to upload a poster image</p>
+    <input type="file" id="posterFile" accept="image/*" style="display:none" onchange="handlePosterUpload(event)">`;
+  zone.onclick = () => document.getElementById('posterFile').click();
+}
+
+function saveFilm() {
+  const title = document.getElementById('filmTitle').value.trim();
+  if (!title) { showToast('⚠️ Please enter a film title.'); return; }
+
+  const cats = Array.from(document.querySelectorAll('.cat-check:checked')).map(c => c.value);
+  const filmActors = actorData.filter(a => a.name.trim()).map(a => ({name: a.name.trim(), photo: a.photo}));
+
+  // Update actors DB
+  filmActors.forEach(a => {
+    if (!actors.find(x => x.name.toLowerCase() === a.name.toLowerCase())) {
+      actors.push({name: a.name, photo: a.photo});
+    } else {
+      const existing = actors.find(x => x.name.toLowerCase() === a.name.toLowerCase());
+      if (a.photo) existing.photo = a.photo;
+    }
+  });
+  localStorage.setItem('cinevault_actors', JSON.stringify(actors));
+
+  if (editingId) {
+    const idx = films.findIndex(f => f.id === editingId);
+    if (idx !== -1) {
+      films[idx] = {...films[idx],
+        title,
+        year: parseInt(document.getElementById('filmYear').value) || null,
+        duration: parseInt(document.getElementById('filmDuration').value) || null,
+        synopsis: document.getElementById('filmSynopsis').value.trim(),
+        categories: cats,
+        poster: posterBase64 || films[idx].poster,
+        actors: filmActors
+      };
+    }
+  } else {
+    films.push({
+      id: Date.now().toString(),
+      title,
+      year: parseInt(document.getElementById('filmYear').value) || null,
+      duration: parseInt(document.getElementById('filmDuration').value) || null,
+      synopsis: document.getElementById('filmSynopsis').value.trim(),
+      categories: cats,
+      poster: posterBase64,
+      actors: filmActors,
+      viewings: []
+    });
+  }
+
+  saveFilms();
+  closeModal('addModal');
+  renderGenreFilters();
+  applyFilters();
+  showToast('✅ Film saved!', 'success');
+}
+
+// ============================================================
+// DETAIL MODAL
+// ============================================================
+function openDetailModal(id) {
+  const f = films.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('detailModalTitle').textContent = f.title;
+
+  const avg = getAvgRating(f);
+  const views = f.viewings ? f.viewings.length : 0;
+
+  const actorsHTML = (f.actors || []).map(a => `
+    <div class="film-actor">
+      <div class="film-actor-photo">
+        ${a.photo ? `<img src="${a.photo}" alt="${escHtml(a.name)}">` : '👤'}
+      </div>
+      <div class="film-actor-name">${escHtml(a.name)}</div>
+    </div>`).join('');
+
+  const viewingsHTML = (f.viewings || []).length > 0 ? `
+    <div class="viewing-history">
+      <h4>Viewing history</h4>
+      <div class="viewing-list">
+        ${[...(f.viewings || [])].reverse().map(v => `
+          <div class="viewing-item">
+            <div class="view-date">📅 ${formatDate(v.date)}</div>
+            <div class="view-score">${v.score}<span class="view-score-num">/10</span></div>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  document.getElementById('detailModalBody').innerHTML = `
+    <div class="film-detail-layout">
+      <div class="film-detail-poster">
+        ${f.poster
+          ? `<img src="${f.poster}" alt="${escHtml(f.title)}">`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg3);font-size:3rem;">🎬</div>`
+        }
+      </div>
+      <div class="film-detail-info">
+        <div class="film-detail-title">${escHtml(f.title)}</div>
+        <div class="film-detail-meta">
+          ${f.year ? `<span>${f.year}</span> · ` : ''}
+          ${f.duration ? `<span>${f.duration} min</span>` : ''}
+        </div>
+        <div class="film-cats">
+          ${(f.categories || []).map(c => `<span class="film-cat-tag">${escHtml(c)}</span>`).join('')}
+        </div>
+        ${f.synopsis ? `<p class="film-synopsis">${escHtml(f.synopsis)}</p>` : ''}
+        ${actorsHTML ? `<div class="film-actors">${actorsHTML}</div>` : ''}
+
+        <div class="film-stats-bar">
+          <div class="film-stat">
+            <div class="stat-val">${views}</div>
+            <div class="stat-label">Viewings</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="film-stat">
+            <div class="stat-val">${avg ? avg : '—'}</div>
+            <div class="stat-label">Avg rating</div>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-red" onclick="openWatchModal('${f.id}')">🍿 We're watching this!</button>
+          <button class="btn btn-outline" onclick="closeModal('detailModal'); openAddModal('${f.id}')">✏️ Edit</button>
+          <button class="btn btn-ghost" onclick="deleteFilm('${f.id}')">🗑 Delete</button>
+        </div>
+
+        ${viewingsHTML}
+      </div>
+    </div>`;
+
+  openModal('detailModal');
+}
+
+function deleteFilm(id) {
+  if (!confirm('Delete this film from your vault?')) return;
+  films = films.filter(f => f.id !== id);
+  saveFilms();
+  closeModal('detailModal');
+  renderGenreFilters();
+  applyFilters();
+  showToast('🗑 Film deleted.');
+}
+
+// ============================================================
+// WATCH MODAL
+// ============================================================
+function openWatchModal(id) {
+  watchingFilmId = id;
+  const f = films.find(x => x.id === id);
+  document.getElementById('watchFilmName').textContent = f ? f.title : '';
+  document.getElementById('watchDate').textContent = formatDate(new Date().toISOString());
+  document.getElementById('scoreRange').value = 7;
+  document.getElementById('scoreDisplay').innerHTML = '7<span>/10</span>';
+  closeModal('detailModal');
+  openModal('watchModal');
+}
+
+function saveWatching() {
+  const f = films.find(x => x.id === watchingFilmId);
+  if (!f) return;
+  if (!f.viewings) f.viewings = [];
+  const score = parseFloat(document.getElementById('scoreRange').value);
+  f.viewings.push({ date: new Date().toISOString(), score });
+  saveFilms();
+  closeModal('watchModal');
+  applyFilters();
+  showToast(`⭐ Viewing saved! You rated it ${score}/10`, 'success');
+}
+
+// ============================================================
+// MOOD / SUGGESTION MODAL
+// ============================================================
+function openMoodModal() {
+  selectedMoods = [];
+  document.querySelectorAll('.mood-option').forEach(m => m.classList.remove('selected'));
+  document.getElementById('moodResults').innerHTML = '';
+  document.getElementById('moodDurRange').value = 210;
+  document.getElementById('moodDurVal').textContent = 210;
+  openModal('moodModal');
+}
+
+function toggleMood(el) {
+  el.classList.toggle('selected');
+  selectedMoods = Array.from(document.querySelectorAll('.mood-option.selected')).map(m => m.dataset.mood);
+}
+
+function getSuggestions() {
+  const maxDur = parseInt(document.getElementById('moodDurRange').value);
+  let targetCats = [];
+  selectedMoods.forEach(m => { if (MOOD_MAP[m]) targetCats = [...targetCats, ...MOOD_MAP[m]]; });
+
+  let pool = films.filter(f => {
+    if (f.duration && f.duration > maxDur) return false;
+    if (targetCats.length > 0) {
+      return (f.categories || []).some(c => targetCats.includes(c));
+    }
+    return true;
+  });
+
+  if (pool.length === 0) {
+    document.getElementById('moodResults').innerHTML = '<p style="color:var(--text3);font-size:0.85rem;margin-top:1rem;">No films match your criteria. Try adjusting your mood or duration.</p>';
+    return;
+  }
+
+  // Shuffle and pick 3
+  pool = pool.sort(() => Math.random() - 0.5).slice(0, 3);
+
+  document.getElementById('moodResults').innerHTML = `
+    <div class="section-divider" style="margin-top:1.25rem;">Suggestions for you</div>
+    <div class="mood-results">
+      ${pool.map(f => {
+        const avg = getAvgRating(f);
+        return `
+        <div class="mood-result-card" onclick="closeModal('moodModal'); openDetailModal('${f.id}')">
+          <div class="mood-result-poster">
+            ${f.poster ? `<img src="${f.poster}" alt="">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg4);">🎬</div>'}
+          </div>
+          <div class="mood-result-info">
+            <div class="mood-result-title">${escHtml(f.title)}</div>
+            <div class="mood-result-meta">
+              ${f.year ? f.year + ' · ' : ''}
+              ${f.duration ? f.duration + ' min' : ''}
+              ${avg ? ' · ⭐ ' + avg : ''}
+            </div>
+            <div style="margin-top:0.3rem;display:flex;flex-wrap:wrap;gap:0.3rem;">
+              ${(f.categories||[]).slice(0,2).map(c=>`<span class="film-cat-tag" style="font-size:0.65rem;">${escHtml(c)}</span>`).join('')}
+            </div>
+          </div>
+          <div style="color:var(--text3);">›</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal(overlay.id);
+  });
+});
+// Close on ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+  }
+});
+// Click outside actor suggestions
+document.addEventListener('click', e => {
+  document.querySelectorAll('.actor-suggestions').forEach(s => {
+    if (!s.contains(e.target)) s.style.display = 'none';
+  });
+});
+
+// ============================================================
+// UTILS
+// ============================================================
+function saveFilms() {
+  localStorage.setItem('cinevault_films', JSON.stringify(films));
+}
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-CA', {year:'numeric',month:'short',day:'numeric'});
+}
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+</script>
+</body>
+</html>
