@@ -715,6 +715,7 @@
 
   /* ANIMATIONS */
   @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .movie-card { animation: fadeIn 0.35s ease both; }
 
   /* SCROLLBAR */
@@ -1000,6 +1001,11 @@
 
 <script>
 // ============================================================
+// CONFIG
+// ============================================================
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzGWhVsaHbhxikHbZw-WQ6o8vTBlwRkBPXzKz4f8kK-siJmh3IKcEvZouKIslVC9OuR/exec';
+
+// ============================================================
 // DATA
 // ============================================================
 const CATEGORIES = ['Comedy','Romance','Action / Adventure','Thriller / Suspense','Horror','Sci-Fi','Drama','Animation','Documentary','Fantasy'];
@@ -1012,8 +1018,9 @@ const MOOD_MAP = {
   documentary: ['Documentary']
 };
 
-let films = JSON.parse(localStorage.getItem('cinevault_films') || '[]');
-let actors = JSON.parse(localStorage.getItem('cinevault_actors') || '[]'); // [{name, photo}]
+let films = [];
+let actors = [];
+let viewings = [];
 let editingId = null;
 let posterBase64 = null;
 let actorData = [{name:'',photo:null},{name:'',photo:null},{name:'',photo:null}];
@@ -1021,11 +1028,55 @@ let watchingFilmId = null;
 let selectedMoods = [];
 
 // ============================================================
+// GOOGLE SHEETS API
+// ============================================================
+async function apiCall(params) {
+  const url = new URL(SCRIPT_URL);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.append(k, v));
+  const resp = await fetch(url.toString());
+  return resp.json();
+}
+
+async function loadAllData() {
+  showLoading(true);
+  try {
+    const [filmsData, actorsData, viewingsData] = await Promise.all([
+      apiCall({action:'getFilms'}),
+      apiCall({action:'getActors'}),
+      apiCall({action:'getViewings'})
+    ]);
+    films = Array.isArray(filmsData) ? filmsData : [];
+    actors = Array.isArray(actorsData) ? actorsData : [];
+    viewings = Array.isArray(viewingsData) ? viewingsData : [];
+    // Attach viewings to films
+    films.forEach(f => {
+      f.viewings = viewings.filter(v => v.filmId === f.id).map(v => ({date: v.date, score: parseFloat(v.score)}));
+    });
+  } catch(e) {
+    showToast('⚠️ Could not connect to Google Sheets. Check your connection.', 'error');
+  }
+  showLoading(false);
+}
+
+function showLoading(on) {
+  const badge = document.getElementById('countBadge');
+  if (on) {
+    badge.textContent = 'Loading...';
+    document.getElementById('movieGrid').innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--text3);">
+        <div style="font-size:2rem;margin-bottom:1rem;animation:spin 1s linear infinite;display:inline-block;">⟳</div>
+        <p>Loading your collection...</p>
+      </div>`;
+  }
+}
+
+// ============================================================
 // INIT
 // ============================================================
-window.onload = () => {
+window.onload = async () => {
   buildCategoryGrid();
   buildActorSlots();
+  await loadAllData();
   renderGenreFilters();
   renderMovieGrid(films);
 };
@@ -1263,56 +1314,42 @@ function resetPosterZone() {
   zone.onclick = () => document.getElementById('posterFile').click();
 }
 
-function saveFilm() {
+async function saveFilm() {
   const title = document.getElementById('filmTitle').value.trim();
   if (!title) { showToast('⚠️ Please enter a film title.'); return; }
 
   const cats = Array.from(document.querySelectorAll('.cat-check:checked')).map(c => c.value);
   const filmActors = actorData.filter(a => a.name.trim()).map(a => ({name: a.name.trim(), photo: a.photo}));
 
-  // Update actors DB
-  filmActors.forEach(a => {
-    if (!actors.find(x => x.name.toLowerCase() === a.name.toLowerCase())) {
-      actors.push({name: a.name, photo: a.photo});
-    } else {
-      const existing = actors.find(x => x.name.toLowerCase() === a.name.toLowerCase());
-      if (a.photo) existing.photo = a.photo;
-    }
-  });
-  localStorage.setItem('cinevault_actors', JSON.stringify(actors));
+  const film = {
+    id: editingId || Date.now().toString(),
+    title,
+    year: parseInt(document.getElementById('filmYear').value) || '',
+    duration: parseInt(document.getElementById('filmDuration').value) || '',
+    synopsis: document.getElementById('filmSynopsis').value.trim(),
+    categories: cats,
+    actors: filmActors,
+    poster: posterBase64 || (editingId ? (films.find(f=>f.id===editingId)||{}).poster : '') || ''
+  };
 
-  if (editingId) {
-    const idx = films.findIndex(f => f.id === editingId);
-    if (idx !== -1) {
-      films[idx] = {...films[idx],
-        title,
-        year: parseInt(document.getElementById('filmYear').value) || null,
-        duration: parseInt(document.getElementById('filmDuration').value) || null,
-        synopsis: document.getElementById('filmSynopsis').value.trim(),
-        categories: cats,
-        poster: posterBase64 || films[idx].poster,
-        actors: filmActors
-      };
-    }
-  } else {
-    films.push({
-      id: Date.now().toString(),
-      title,
-      year: parseInt(document.getElementById('filmYear').value) || null,
-      duration: parseInt(document.getElementById('filmDuration').value) || null,
-      synopsis: document.getElementById('filmSynopsis').value.trim(),
-      categories: cats,
-      poster: posterBase64,
-      actors: filmActors,
-      viewings: []
-    });
-  }
-
-  saveFilms();
   closeModal('addModal');
-  renderGenreFilters();
-  applyFilters();
-  showToast('✅ Film saved!', 'success');
+  showToast('💾 Saving...', '');
+
+  try {
+    // Save film
+    await apiCall({action:'saveFilm', data: JSON.stringify(film)});
+    // Save new actors
+    for (const a of filmActors) {
+      await apiCall({action:'saveActor', data: JSON.stringify(a)});
+    }
+    // Reload data
+    await loadAllData();
+    renderGenreFilters();
+    applyFilters();
+    showToast('✅ Film saved to Google Sheets!', 'success');
+  } catch(e) {
+    showToast('⚠️ Error saving. Please try again.', '');
+  }
 }
 
 // ============================================================
@@ -1391,14 +1428,19 @@ function openDetailModal(id) {
   openModal('detailModal');
 }
 
-function deleteFilm(id) {
+async function deleteFilm(id) {
   if (!confirm('Delete this film from your vault?')) return;
-  films = films.filter(f => f.id !== id);
-  saveFilms();
   closeModal('detailModal');
-  renderGenreFilters();
-  applyFilters();
-  showToast('🗑 Film deleted.');
+  showToast('🗑 Deleting...', '');
+  try {
+    await apiCall({action:'deleteFilm', id});
+    await loadAllData();
+    renderGenreFilters();
+    applyFilters();
+    showToast('🗑 Film deleted.', '');
+  } catch(e) {
+    showToast('⚠️ Error deleting. Please try again.', '');
+  }
 }
 
 // ============================================================
@@ -1415,16 +1457,21 @@ function openWatchModal(id) {
   openModal('watchModal');
 }
 
-function saveWatching() {
+async function saveWatching() {
   const f = films.find(x => x.id === watchingFilmId);
   if (!f) return;
-  if (!f.viewings) f.viewings = [];
   const score = parseFloat(document.getElementById('scoreRange').value);
-  f.viewings.push({ date: new Date().toISOString(), score });
-  saveFilms();
+  const viewing = { filmId: watchingFilmId, date: new Date().toISOString(), score };
   closeModal('watchModal');
-  applyFilters();
-  showToast(`⭐ Viewing saved! You rated it ${score}/10`, 'success');
+  showToast('💾 Saving...', '');
+  try {
+    await apiCall({action:'addViewing', data: JSON.stringify(viewing)});
+    await loadAllData();
+    applyFilters();
+    showToast(`⭐ Viewing saved! You rated it ${score}/10`, 'success');
+  } catch(e) {
+    showToast('⚠️ Error saving viewing. Please try again.', '');
+  }
 }
 
 // ============================================================
@@ -1526,7 +1573,7 @@ document.addEventListener('click', e => {
 // UTILS
 // ============================================================
 function saveFilms() {
-  localStorage.setItem('cinevault_films', JSON.stringify(films));
+  // Data is now saved to Google Sheets via apiCall
 }
 function escHtml(str) {
   if (!str) return '';
